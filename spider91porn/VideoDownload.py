@@ -5,30 +5,32 @@ import threading
 import os
 import time, datetime
 from multiprocessing import Process,Pool
+import tqdm
 
 
 def Schedule(a,b,c):
-    '''''
-    a:已经下载的数据块
-    b:数据块的大小
-    c:远程文件的大小
-   '''
+
+    # a:已经下载的数据块
+    # b:数据块的大小
+    # c:远程文件的大小
+
     per = 100.0 * a * b / c
     if per > 100 :
         per = 100
-    print('%.2f%%' % per)
+    print('   %.2f%%' % per)
+
 def Download(item):
-    #print('gogogo')
     url = item['downurl']
     localpath = 'VideoDownload/'
     file_name = item['title']
-    local = os.path.join(localpath, file_name + '.mp4')
+    local = os.path.join(localpath, file_name + '.mp4.download')
     #print(url, localpath, file_name)
     try:
-        # urlretrieve(url, local, Schedule)
-        print('开始下载 ' + file_name + '.mp4')
-        urlretrieve(url, local)
-        print(file_name + '.mp4 下载完成.')
+        print('          开始下载 ' + file_name + '.mp4')
+        urlretrieve(url, local, Schedule)
+        #urlretrieve(url, local)
+        os.rename(localpath + file_name +'.mp4.download',localpath + file_name + '.mp4')
+        print('  下载完成.' + file_name + '.mp4')
     except:
         print(file_name+'.mp4', '下载失败')
 
@@ -38,9 +40,9 @@ if __name__=='__main__':
     with open("../1.json", 'r') as f:
         fileitem = json.loads(f.read())
         f.close()
-    pool = Pool(processes=10)
+    pool = Pool(processes=5)
     res_l = []
-    for item in fileitem[::-1]:
+    for item in fileitem:
         if item['yesdown'] == 1:
             file_name = item['title']
             #print(item['downurl'])
