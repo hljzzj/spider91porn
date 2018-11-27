@@ -25,15 +25,12 @@ class List91pornSpider(scrapy.Spider):
             # updatetime = sel.xpath('ul/li[2]/span/span[2]/text()').extract()[0].strip()
             # print(title, link, movietime, upuser, updatetime)
             item = Spider91PornItem()
-            item['title'] = sel.xpath('a[1]/@title').extract()[0]
+            item['title'] = sel.xpath('a[1]/@title').extract()[0].strip('()')
             item['link'] = "http://www.320lu.net" + sel.xpath('a[1]/@href').extract()[0]
             item['movietime'] = sel.xpath('a[2]/b/text()').extract()[0].strip("时长：")
             item['upuser'] = sel.xpath('a[2]/ul/li[2]/span/span[1]/text()').extract()[0].strip()
-            item['updatetime'] = sel.xpath('a[2]/ul/li[2]/span/span[2]/text()').extract()[0].strip()
-            urlpath = re.findall(r'.*2_(.*).jpg',
-                                 sel.xpath(
-                                     '//html/body/div[1]/div[4]/div/div[2]/div'
-                                     '[2]/div/div[2]/ul/li[1]/div/div/a[1]/img/@data-original').extract()[0])[0]
+            item['updatetime'] = sel.xpath('a[2]/ul/li/span/span[2]/text()').extract()[0].strip()
+            urlpath = re.findall(r'.*2_(.*).jpg', sel.xpath('a/img/@data-original').extract()[0])[0]
             item['downurl'] = 'https://free5.qksdown.com/91porn/' + urlpath + '.mp4'
             m,s = item['movietime'].strip().split(":")
             movietime = int(m) * 60 + int(s)
