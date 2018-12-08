@@ -5,7 +5,9 @@ import re
 import time
 from os import path
 import os
-
+"""
+scrapy crawl spider91porn -o 10.json
+"""
 
 class List91pornSpider(scrapy.Spider):
     name = "spider91porn"
@@ -13,7 +15,7 @@ class List91pornSpider(scrapy.Spider):
 
     def start_requests(self):
         url = "http://www.320lu.net/vod-type-id-1-pg-{0}.html"
-        for i in range(1, 400):
+        for i in range(1, 10):
             yield scrapy.Request(url.format(i), callback=self.parse)
 
     def parse(self, response):

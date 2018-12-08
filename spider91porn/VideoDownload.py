@@ -5,19 +5,26 @@ import threading
 import os
 import time, datetime
 from multiprocessing import Process,Pool
-import tqdm
+from tqdm import tqdm
 
 
-def Schedule(a,b,c):
+class TqdmUpTo(tqdm):
+    # Provides `update_to(n)` which uses `tqdm.update(delta_n)`.
 
-    # a:已经下载的数据块
-    # b:数据块的大小
-    # c:远程文件的大小
-
-    per = 100.0 * a * b / c
-    if per > 100 :
-        per = 100
-    print('   %.2f%%' % per)
+    last_block = 0
+    def update_to(self, block_num=1, block_size=1, total_size=None):
+        '''
+        block_num  : int, optional
+            到目前为止传输的块 [default: 1].
+        block_size : int, optional
+            每个块的大小 (in tqdm units) [default: 1].
+        total_size : int, optional
+            文件总大小 (in tqdm units). 如果[default: None]保持不变.
+        '''
+        if total_size is not None:
+            self.total = total_size
+        self.update((block_num - self.last_block) * block_size)
+        self.last_block = block_num
 
 def Download(item):
     url = item['downurl']
@@ -26,18 +33,23 @@ def Download(item):
     local = os.path.join(localpath, file_name + '.mp4.download')
     #print(url, localpath, file_name)
     try:
-        print('          开始下载 ' + file_name + '.mp4')
-        urlretrieve(url, local, Schedule)
+        #print('          开始下载 ' + file_name + '.mp4')
+        #urlretrieve(url, local, Schedule)
         #urlretrieve(url, local)
+        with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024, miniters=1,
+                      desc=file_name+'.mp4') as t:  # 继承至tqdm父类的初始化参数
+            urlretrieve(url, filename=local, reporthook=t.update_to, data=None)
         os.rename(localpath + file_name +'.mp4.download',localpath + file_name + '.mp4')
-        print('  下载完成.' + file_name + '.mp4')
-    except:
+        #print('  下载完成.' + file_name + '.mp4')
+    except KeyboardInterrupt:
         print(file_name+'.mp4', '下载失败')
+        t.close()
+    t.close()
 
 
 
 if __name__=='__main__':
-    with open("../1.json", 'r') as f:
+    with open("../10.json", 'r') as f:
         fileitem = json.loads(f.read())
         f.close()
     pool = Pool(processes=5)
