@@ -11,10 +11,10 @@ scrapy crawl spider91porn -o 10.json
 
 class List91pornSpider(scrapy.Spider):
     name = "spider91porn"
-    allowed_domains = ["www.320lu.net/"]
+    allowed_domains = ["www.620lu.net/"]
 
     def start_requests(self):
-        url = "http://www.320lu.net/vod-type-id-1-pg-{0}.html"
+        url = "http://www.620lu.net/vod-type-id-1-pg-{0}.html"
         for i in range(1, 10):
             yield scrapy.Request(url.format(i), callback=self.parse)
 
