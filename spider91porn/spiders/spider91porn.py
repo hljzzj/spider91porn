@@ -9,14 +9,17 @@ import os
 scrapy crawl spider91porn -o 10.json
 """
 
+
 class List91pornSpider(scrapy.Spider):
     name = "spider91porn"
-    allowed_domains = ["www.620lu.net/"]
+    allowed_domains = ["http://www.320see.com/"]
+    domainurl = "http://www.320see.com"  # 域名变更时修改此处
 
     def start_requests(self):
-        url = "http://www.620lu.net/vod-type-id-1-pg-{0}.html"
+        url = self.domainurl + "/vod-type-id-1-pg-{0}.html"
         for i in range(1, 10):
             yield scrapy.Request(url.format(i), callback=self.parse)
+# https://free3.qksdown.com/seporn/8fc8e4585c022520c1dd509ecfd09778/8fc8e4585c022520c1dd509ecfd09778.mp4?1554121681
 
     def parse(self, response):
         for sel in response.xpath('//html/body/div[1]/div[4]/div/div[2]/div[2]/div/div[2]/ul/li/div/div'):
@@ -28,20 +31,23 @@ class List91pornSpider(scrapy.Spider):
             # print(title, link, movietime, upuser, updatetime)
             item = Spider91PornItem()
             item['title'] = sel.xpath('a[1]/@title').extract()[0].strip('()')
-            item['link'] = "http://www.320lu.net" + sel.xpath('a[1]/@href').extract()[0]
+            item['link'] = self.domainurl + sel.xpath('a[1]/@href').extract()[0]
             item['movietime'] = sel.xpath('a[2]/b/text()').extract()[0].strip("时长：")
             item['upuser'] = sel.xpath('a[2]/ul/li[2]/span/span[1]/text()').extract()[0].strip()
             item['updatetime'] = sel.xpath('a[2]/ul/li/span/span[2]/text()').extract()[0].strip()
             urlpath = re.findall(r'.*2_(.*).jpg', sel.xpath('a/img/@data-original').extract()[0])[0]
             item['downurl'] = 'https://free5.qksdown.com/91porn/' + urlpath + '.mp4'
-            m,s = item['movietime'].strip().split(":")
+            print('下载地址：')
+            print('https://free5.qksdown.com/91porn/' + urlpath + '.mp4')
+            m, s = item['movietime'].strip().split(":")
             movietime = int(m) * 60 + int(s)
-            if movietime < 600:
+            if movietime < 480:
                 item['yesdown'] = 2
             else:
                 item['yesdown'] = 1
             # yield scrapy.Request(url=item['downurl'], meta=item, callback=self.VideoDownload)
             yield item
+
     def VideoDownload(self, response):
         item = response.meta
         if item['movietime'] == '1':
@@ -58,32 +64,3 @@ class List91pornSpider(scrapy.Spider):
         else:
             pass
         yield item
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

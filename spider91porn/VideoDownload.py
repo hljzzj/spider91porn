@@ -1,5 +1,8 @@
 import json
 from urllib.request import urlretrieve
+import urllib.request
+import requests
+from lxml import etree
 import queue
 import threading
 import os
@@ -31,7 +34,7 @@ def Download(item):
     localpath = 'VideoDownload/'
     file_name = item['title']
     local = os.path.join(localpath, file_name + '.mp4.download')
-    #print(url, localpath, file_name)
+    # print(url, localpath, file_name)
     try:
         #print('          开始下载 ' + file_name + '.mp4')
         #urlretrieve(url, local, Schedule)
@@ -39,16 +42,66 @@ def Download(item):
         with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024, miniters=1,
                       desc=file_name+'.mp4') as t:  # 继承至tqdm父类的初始化参数
             urlretrieve(url, filename=local, reporthook=t.update_to, data=None)
-        os.rename(localpath + file_name +'.mp4.download',localpath + file_name + '.mp4')
-        #print('  下载完成.' + file_name + '.mp4')
+        os.rename(localpath + file_name + '.mp4.download', localpath + file_name + '.mp4')
+        # print('  下载完成.' + file_name + '.mp4')
     except KeyboardInterrupt:
         print(file_name+'.mp4', '下载失败')
         t.close()
     t.close()
 
 
+def Download2(item):
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.108 Safari/537.36",}
 
-if __name__=='__main__':
+    resp = requests.get(item['downurl'], headers=headers)
+    localpath = 'VideoDownload/'
+
+    local = os.path.join(localpath, file_name + '.mp4.download')
+    print(local)
+    if resp.status_code == 200:
+        resp.encoding = 'UTF-8'
+        img_titles = item['title']
+        img_urls = item['downurl']
+
+        data = zip(img_titles, img_urls)
+        for img_title, img_url in data:
+            print('开始下载{title}.mp4'.format(title=img_title))
+            result = urllib.request.urlretrieve(img_url, filename=local, reporthook=loading, data=None)
+            print(result)
+        os.rename(localpath + file_name + '.mp4.download', localpath + file_name + '.mp4')
+
+
+def loading(blocknum,blocksize,totalsize):
+    """
+    回调函数: 数据传输时自动调用
+    blocknum:已经传输的数据块数目
+    blocksize:每个数据块字节
+    totalsize:总字节
+    """
+    percent = int(100*blocknum*blocksize/totalsize)
+    if percent > 100:
+        percent = 100
+    print("正在下载>>>{}%".format(percent))
+    import time
+    time.sleep(0.5)
+
+
+def Download3(item):
+    url = item['downurl']
+    r = requests.get(url, stream=True)
+    with open(item['title']+'.mp4.download', "wb") as mp4:
+        for chunk in tqdm(r.iter_content()):
+            if chunk:
+                mp4.write(chunk)
+        os.rename(item['title']+'.mp4.download', item['title']+'.mp4')
+        print(item['title']+"  下载完成")
+
+
+if __name__ == '__main__':
+    localpath = 'VideoDownload/'
+
+    local = os.path.join(localpath, '.mp4.download')
+    print(local)
     with open("../10.json", 'r') as f:
         fileitem = json.loads(f.read())
         f.close()
@@ -58,7 +111,7 @@ if __name__=='__main__':
         if item['yesdown'] == 1:
             file_name = item['title']
             #print(item['downurl'])
-            res = pool.apply_async(Download, (item, ))  # 维持执行的进程总数为processes，当一个进程执行完毕后会添加新的进程进去
+            res = pool.apply_async(Download3, (item, ))  # 维持执行的进程总数为processes，当一个进程执行完毕后会添加新的进程进去
             res_l.append(res)
             #print(item)
     pool.close()  # 关闭进程池，防止进一步操作。如果所有操作持续挂起，它们将在工作进程终止前完成

@@ -1,26 +1,65 @@
-from urllib.request import urlretrieve
-from tqdm import tqdm
+import gzip
+import json
+import pprint
+import threading
 
-class TqdmUpTo(tqdm):
-    # Provides `update_to(n)` which uses `tqdm.update(delta_n)`.
+import time
+import websocket
 
-    last_block = 0
-    def update_to(self, block_num=1, block_size=1, total_size=None):
-        '''
-        block_num  : int, optional
-            到目前为止传输的块 [default: 1].
-        block_size : int, optional
-            每个块的大小 (in tqdm units) [default: 1].
-        total_size : int, optional
-            文件总大小 (in tqdm units). 如果[default: None]保持不变.
-        '''
-        if total_size is not None:
-            self.total = total_size
-        self.update((block_num - self.last_block) * block_size)
-        self.last_block = block_num
 
-eg_link = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
-file = eg_link.split('/')[-1]
-with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024, miniters=1,
-              desc=file) as t:  # 继承至tqdm父类的初始化参数
-    urlretrieve(eg_link, filename=file, reporthook=t.update_to, data=None)
+def send_message(ws, message_dict):
+    data = json.dumps(message_dict).encode()
+    print("Sending Message:")
+    pprint.pprint(message_dict)
+    ws.send(data)
+
+
+def on_message(ws, message):
+    unzipped_data = gzip.decompress(message).decode()
+    msg_dict = json.loads(unzipped_data)
+    print("Recieved Message: ")
+    pprint.pprint(msg_dict)
+    if 'ping' in msg_dict:
+        data = {
+            "pong": msg_dict['ping']
+        }
+        send_message(ws, data)
+
+
+def on_error(ws, error):
+    print("Error: " + str(error))
+    error = gzip.decompress(error).decode()
+    print(error)
+
+
+def on_close(ws):
+    print("### closed ###")
+
+
+def on_open(ws):
+    def run(*args):
+        data = {
+            "req": "market.btcusdt.kline.1min",
+            "id": "id1"
+        }
+        # # 每2秒请求一次K线图，请求5次
+        for i in range(5):
+            time.sleep(2)
+            send_message(ws, data)
+        ws.close()
+        print("thread terminating...")
+
+    t = threading.Thread(target=run, args=())
+    t.start()
+
+
+if __name__ == "__main__":
+    # websocket.enableTrace(True)
+    ws = websocket.WebSocketApp(
+        "wss://api.huobi.pro/ws",
+        on_open=on_open,
+        on_message=on_message,
+        on_error=on_error,
+        on_close=on_close
+    )
+    ws.run_forever()
