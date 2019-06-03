@@ -11,7 +11,7 @@ import scrapy
 class Spider91PornItem(scrapy.Item):
     title = scrapy.Field()
     link = scrapy.Field()
-    upuser = scrapy.Field()
+    # upuser = scrapy.Field()
     updatetime = scrapy.Field()
     movietime = scrapy.Field()
     downurl = scrapy.Field()
